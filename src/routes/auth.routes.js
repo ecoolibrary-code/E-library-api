@@ -6,6 +6,9 @@ import { registerSchema, loginSchema, registerAdminSchema } from '../validations
 import * as authController from '../controllers/auth.controller.js';
 import passport from '../config/passport.js';
 import verifyToken from '../middleware/auth.js';
+import { createRequire } from 'module';
+
+const require = createRequire(import.meta.url);
 
 const router = Router();
 
@@ -32,3 +35,4 @@ router.get(
 router.get('/me', verifyToken, authController.getMe);
 
 export default router;
+
