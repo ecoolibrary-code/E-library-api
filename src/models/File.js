@@ -21,7 +21,7 @@ const fileSchema = new mongoose.Schema(
     description: {
       type: String,
       default: '',
-      maxlength: 1000,
+      maxlength: 3000,
     },
     r2Key: {
       type: String,
