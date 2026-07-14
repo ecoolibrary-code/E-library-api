@@ -49,7 +49,7 @@ export const getCoverImageUrl = async (req, res, next) => {
 
 export const getFileById = async (req, res, next) => {
   try {
-    const result = await fileService.getFileById(req.params.id);
+    const result = await fileService.getFileById(req.params.id, req.user);
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);
@@ -71,6 +71,15 @@ export const getFiles = async (req, res, next) => {
     if (req.query.owner) query.owner = req.query.owner;
     if (req.query.category) query.category = req.query.category;
     if (req.query.productType) query.productType = req.query.productType;
+
+    // Visibility filtering
+    if (req.user && req.user.role === 'admin') {
+      if (req.query.isHidden !== undefined) {
+        query.isHidden = req.query.isHidden === 'true';
+      }
+    } else {
+      query.isHidden = { $ne: true };
+    }
     
     // Language filtering: 'ar' includes documents with no language set
     if (req.query.language) {
@@ -202,6 +211,16 @@ export const updateFile = async (req, res, next) => {
     const coverFile = req.files?.cover ? req.files.cover[0] : null;
 
     const result = await fileService.updateFile(req.params.id, req.user, req.body, mainFile, coverFile);
+    res.status(200).json({ status: 'success', data: result });
+  } catch (err) {
+    next(err);
+  }
+};
+
+export const updateVisibility = async (req, res, next) => {
+  try {
+    const { isHidden } = req.body;
+    const result = await fileService.updateFileVisibility(req.params.id, isHidden);
     res.status(200).json({ status: 'success', data: result });
   } catch (err) {
     next(err);

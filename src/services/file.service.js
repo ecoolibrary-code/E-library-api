@@ -71,6 +71,7 @@ export const formatFileResponse = async (file) => {
     release_date: file.release_date,
     size: file.size,
     mimeType: file.mimeType,
+    isHidden: file.isHidden || false,
     createdAt: file.createdAt,
     updatedAt: file.updatedAt,
   };
@@ -176,6 +177,7 @@ export const updateFile = async (fileId, user, updates, fileObj = null, coverObj
   if (updates.productType !== undefined) file.productType = updates.productType;
   if (updates.language !== undefined) file.language = updates.language;
   if (updates.release_date !== undefined) file.release_date = updates.release_date || null;
+  if (updates.isHidden !== undefined) file.isHidden = updates.isHidden === 'true' || updates.isHidden === true;
 
   await file.save();
   const populatedFile = await file.populate(['category', 'productType']);
@@ -272,9 +274,15 @@ export const getCoverImageUrl = async (fileOrId) => {
 /**
  * Fetch a single file by ID (fully populated).
  */
-export const getFileById = async (fileId) => {
+export const getFileById = async (fileId, user = null) => {
   const file = await File.findById(fileId).populate(['category', 'productType']);
   if (!file) {
+    const err = new Error('File not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  if (file.isHidden && (!user || user.role !== 'admin')) {
     const err = new Error('File not found.');
     err.statusCode = 404;
     throw err;
@@ -362,7 +370,8 @@ export const getLatestReleases = async (page = 1, limit = 12, language = null) =
   const now = new Date();
 
   const query = {
-    release_date: { $ne: null, $lte: now }
+    release_date: { $ne: null, $lte: now },
+    isHidden: { $ne: true }
   };
   if (language) {
     if (language === 'ar') {
@@ -419,7 +428,7 @@ export const getTrendingFiles = async (limit = 10, language = null) => {
   ]);
 
   const fileIds = trending.map(t => t._id);
-  const query = { _id: { $in: fileIds } };
+  const query = { _id: { $in: fileIds }, isHidden: { $ne: true } };
   if (language) {
     if (language === 'ar') {
       query.$or = [
@@ -460,7 +469,7 @@ export const getPopularFiles = async (limit = 10, language = null) => {
   ]);
 
   const fileIds = popular.map(p => p._id);
-  const query = { _id: { $in: fileIds } };
+  const query = { _id: { $in: fileIds }, isHidden: { $ne: true } };
   if (language) {
     if (language === 'ar') {
       query.$or = [
@@ -486,4 +495,22 @@ export const getPopularFiles = async (limit = 10, language = null) => {
   return await Promise.all(orderedFiles.map(async (f) => {
     return await formatFileResponse(f);
   }));
+};
+
+/**
+ * Toggle or set file visibility (Admin only)
+ */
+export const updateFileVisibility = async (fileId, isHidden) => {
+  const file = await File.findById(fileId);
+  if (!file) {
+    const err = new Error('File not found.');
+    err.statusCode = 404;
+    throw err;
+  }
+
+  file.isHidden = isHidden;
+  await file.save();
+
+  const populatedFile = await file.populate(['category', 'productType']);
+  return await formatFileResponse(populatedFile);
 };

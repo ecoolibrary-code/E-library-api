@@ -39,4 +39,9 @@ export const updateFileSchema = Joi.object({
   productType: Joi.string().hex().length(24).optional(),
   language: Joi.string().valid('ar', 'en', 'es', 'fr').optional(),
   release_date: Joi.date().iso().max('now').optional().allow(null),
+  isHidden: Joi.boolean().optional(),
+});
+
+export const toggleVisibilitySchema = Joi.object({
+  isHidden: Joi.boolean().required(),
 });
