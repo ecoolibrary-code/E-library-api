@@ -72,6 +72,10 @@ const fileSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+    isHidden: {
+      type: Boolean,
+      default: false,
+    },
   },
   { timestamps: true }
 );
