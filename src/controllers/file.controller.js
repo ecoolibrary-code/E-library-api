@@ -132,6 +132,15 @@ export const getOnSaleFiles = async (req, res, next) => {
     const limit = parseInt(req.query.limit) || 12;
     const query = { isOnSale: true };
 
+    // Visibility filtering (same logic as getFiles)
+    if (req.user && req.user.role === 'admin') {
+      if (req.query.isHidden !== undefined) {
+        query.isHidden = req.query.isHidden === 'true';
+      }
+    } else {
+      query.isHidden = { $ne: true };
+    }
+
     if (req.query.language) {
       if (req.query.language === 'ar') {
         query.$or = [
